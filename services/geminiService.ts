@@ -4,14 +4,25 @@ import { AnalysisResult, AlertLevel, Patient } from "../types";
 import { checkLocalDUR } from "./durEngine";
 import { searchWhoDb, WHO_ADVERSE_DB } from "./whoAdverseDb";
 
-// vite.config.ts의 define을 통해 주입됩니다.
-// .env.local에 GEMINI_API_KEY=your_key 로 설정하거나
-// Codespaces Secrets에 GEMINI_API_KEY 를 추가하세요.
-const API_KEY: string = process.env.GEMINI_API_KEY || "";
-if (!API_KEY) {
-  console.error("[PharmGni] GEMINI_API_KEY가 설정되지 않았습니다. .env.local 또는 Codespaces Secrets를 확인하세요.");
+const SESSION_KEY = 'pharmgni_gemini_key';
+
+// 우선순위: 사용자 입력(sessionStorage) > .env.local > Codespaces Secret
+function getApiKey(): string {
+  return sessionStorage.getItem(SESSION_KEY) || process.env.GEMINI_API_KEY || "";
 }
-const ai = new GoogleGenAI({ apiKey: API_KEY });
+
+export function isApiKeyConfigured(): boolean {
+  return getApiKey().length > 0;
+}
+
+export function saveApiKey(key: string): void {
+  sessionStorage.setItem(SESSION_KEY, key.trim());
+}
+
+// 각 호출 시점에 키를 읽어 동적으로 클라이언트 생성
+function createClient(): GoogleGenAI {
+  return new GoogleGenAI({ apiKey: getApiKey() });
+}
 
 function cleanJsonString(text: string): string {
   // 1. Try to find a JSON code block (robust against "thinking" text preamble)
@@ -52,6 +63,9 @@ export const analyzeMedicalImage = async (
   patientContext: string
 ): Promise<AnalysisResult> => {
   try {
+    if (!isApiKeyConfigured()) {
+      throw new Error("NO_API_KEY");
+    }
     // [보완] 전송 전 로컬 마스킹 단계 거침 (Legal Compliance)
     const maskedBase64 = await simulateLocalMasking(base64Image);
     
@@ -88,7 +102,7 @@ export const analyzeMedicalImage = async (
       ${patientContext}
     `;
 
-    const response = await ai.models.generateContent({
+    const response = await createClient().models.generateContent({
       model: modelId,
       contents: {
         parts: [
@@ -211,11 +225,14 @@ export const analyzeMedicalImage = async (
     
     throw new Error("No response from AI");
   } catch (error) {
+    const isKeyMissing = error instanceof Error && error.message === "NO_API_KEY";
     console.error("Gemini Analysis Error:", error);
     return {
       medications: [],
       alerts: [],
-      summary: "분석 중 오류가 발생했습니다.",
+      summary: isKeyMissing
+        ? "NO_API_KEY"
+        : "분석 중 오류가 발생했습니다.",
     };
   }
 };
@@ -269,7 +286,7 @@ export const askClinicalAi = async (
       5. If a 'reference' URL is available in the WHO DB entry, please include it at the bottom of the response labeled as '[Reference]'.
     `;
 
-    const response = await ai.models.generateContent({
+    const response = await createClient().models.generateContent({
       model: 'gemini-3-flash-preview',
       contents: [
         { text: clinicalContext },

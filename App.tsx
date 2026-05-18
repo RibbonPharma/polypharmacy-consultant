@@ -50,6 +50,10 @@ const App: React.FC = () => {
 
   // New handler for scan completion
   const handleScanComplete = (result: AnalysisResult) => {
+    if (result.summary === 'NO_API_KEY') {
+      alert('API 키가 설정되지 않았습니다.\n우측 상단 "API 키 설정" 버튼을 눌러 Gemini API 키를 입력해주세요.');
+      return;
+    }
     setAnalysisResult(result);
 
     setPatient(prev => {

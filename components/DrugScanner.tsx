@@ -1,7 +1,7 @@
 
 import React, { useRef, useState, useEffect } from 'react';
-import { Camera, Image as ImageIcon, Loader2, Upload, CameraIcon, X, Zap, ShieldCheck, Globe } from 'lucide-react';
-import { analyzeMedicalImage } from '../services/geminiService';
+import { Camera, Image as ImageIcon, Loader2, Upload, CameraIcon, X, Zap, ShieldCheck, Globe, KeyRound } from 'lucide-react';
+import { analyzeMedicalImage, isApiKeyConfigured } from '../services/geminiService';
 import { AnalysisResult, Patient } from '../types';
 import ImageMasker from './ImageMasker';
 
@@ -90,12 +90,21 @@ const DrugScanner: React.FC<DrugScannerProps> = ({ onAnalysisComplete, patient }
     }
   };
 
+  const apiKeyMissing = !isApiKeyConfigured();
+
   return (
     <section className="mt-4 bg-white rounded-xl shadow-sm border border-slate-200 p-5 relative" aria-labelledby="scanner-title">
       <h3 id="scanner-title" className="text-sm font-bold text-slate-800 mb-3 flex items-center gap-2">
         <Zap className="w-4 h-4 text-teal-600 fill-teal-600" aria-hidden="true" />
         Snap & Solve (약물 스캔)
       </h3>
+
+      {apiKeyMissing && (
+        <div className="mb-3 flex items-center gap-2 text-xs bg-red-50 border border-red-200 text-red-700 rounded-lg px-3 py-2" role="alert">
+          <KeyRound className="w-3.5 h-3.5 shrink-0" />
+          <span>Gemini API 키가 설정되지 않았습니다. 우측 상단 <strong>API 키 설정</strong> 버튼을 눌러 키를 입력하세요.</span>
+        </div>
+      )}
       
       <div 
         role="button"
