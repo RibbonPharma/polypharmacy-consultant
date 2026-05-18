@@ -1,9 +1,8 @@
 
 import React, { useState } from 'react';
-import { BrainCircuit, Send, Loader2, ShieldCheck, HelpCircle, ThumbsUp, ThumbsDown, Check } from 'lucide-react';
+import { BrainCircuit, Send, Loader2, ShieldCheck, HelpCircle } from 'lucide-react';
 import { askClinicalAi } from '../services/geminiService';
-import { Patient, AnalysisResult, FeedbackRating } from '../types';
-import { submitFeedback } from '../services/feedbackService';
+import { Patient, AnalysisResult } from '../types';
 
 interface ClinicalAssistantProps {
   patient: Patient;
@@ -14,7 +13,6 @@ interface ChatMessage {
     id: string;
     role: 'user' | 'ai';
     text: string;
-    feedback?: FeedbackRating;
 }
 
 const ClinicalAssistant: React.FC<ClinicalAssistantProps> = ({ patient, analysis }) => {
@@ -41,25 +39,6 @@ const ClinicalAssistant: React.FC<ClinicalAssistantProps> = ({ patient, analysis
     } finally {
       setIsLoading(false);
     }
-  };
-
-  const handleFeedback = async (msgId: string, rating: FeedbackRating) => {
-    const msgIndex = history.findIndex(m => m.id === msgId);
-    if (msgIndex === -1) return;
-
-    // Update local state immediately
-    const updatedHistory = [...history];
-    updatedHistory[msgIndex].feedback = rating;
-    setHistory(updatedHistory);
-
-    // Submit to service
-    await submitFeedback({
-        targetId: msgId, // In real app, this would be a message UUID
-        category: 'CHAT',
-        rating: rating,
-        comment: '', // Optional: Add comment modal later if needed
-        timestamp: new Date().toISOString()
-    });
   };
 
   // Helper function to render text with clickable links
@@ -123,33 +102,6 @@ const ClinicalAssistant: React.FC<ClinicalAssistantProps> = ({ patient, analysis
                 {renderMessageWithLinks(msg.text)}
               </div>
               
-              {/* Feedback Controls for AI messages */}
-              {msg.role === 'ai' && (
-                  <div className="flex items-center gap-2 mt-1 ml-1">
-                      {msg.feedback ? (
-                          <span className="text-[10px] text-indigo-400 font-bold flex items-center gap-1">
-                             <Check className="w-3 h-3" /> Feedback sent
-                          </span>
-                      ) : (
-                          <>
-                            <button 
-                                onClick={() => handleFeedback(msg.id, 'POSITIVE')}
-                                className="p-1 text-slate-300 hover:text-teal-600 hover:bg-white rounded transition-colors"
-                                title="유용함"
-                            >
-                                <ThumbsUp className="w-3 h-3" />
-                            </button>
-                            <button 
-                                onClick={() => handleFeedback(msg.id, 'NEGATIVE')}
-                                className="p-1 text-slate-300 hover:text-red-500 hover:bg-white rounded transition-colors"
-                                title="부정확함"
-                            >
-                                <ThumbsDown className="w-3 h-3" />
-                            </button>
-                          </>
-                      )}
-                  </div>
-              )}
             </div>
           ))
         )}
