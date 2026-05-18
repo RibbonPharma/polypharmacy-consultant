@@ -1,7 +1,6 @@
-
 import { Language } from '../types';
 
-export const TRANSLATIONS = {
+export const TRANSLATIONS: Record<Language, Record<string, string>> = {
   ko: {
     // Header
     role_pharmacist: "약사님",
@@ -101,50 +100,5 @@ export const TRANSLATIONS = {
     alert_red: "Critical",
     alert_yellow: "Warning",
     alert_green: "Safe"
-  },
-  ja: {
-    role_pharmacist: "薬剤師",
-    logout: "ログアウト",
-    patient_conditions: "基礎疾患",
-    data_source: "データソース",
-    connected: "接続済み",
-    cond_hypertension: "高血圧",
-    cond_arthritis: "関節炎",
-    cond_kidney: "腎臓病 (eGFR < 60)",
-    visit_home: "在宅医療",
-    visit_pharmacy: "薬局訪問",
-
-    scan_title: "Snap & Solve (お薬スキャン)",
-    scan_placeholder: "撮影またはアップロード",
-    scan_subtext: "処方箋、薬袋、薬瓶",
-    scan_analyzing: "Gemini 分析中...",
-    scan_camera: "カメラ撮影",
-    scan_upload: "写真アップロード",
-    scan_cancel: "キャンセル",
-    scan_guide: "枠内にお薬を合わせてください",
-    scan_privacy: "* プライバシー保護のため、画像はサーバーに保存されません。",
-    waiting_title: "待機中",
-    waiting_desc: "左側のパネルでお薬をスキャンしてください。",
-    report_title: "臨床分析レポート",
-    dur_connected: "DUR DB 接続",
-    engine_ver: "知識エンジン v2.0 (Local)",
-    risk_factors: "分析された臨床リスク",
-    verified: "検証済み",
-    cause: "原因",
-    recommendation: "推奨",
-    med_list: "認識された薬剤リスト",
-    guide_title: "服薬ガイド",
-    mode_list: "リスト表示",
-    mode_pictogram: "絵文字 (高齢者向け)",
-    guide_header: "服薬指導",
-    guide_warning: "併用禁止",
-    guide_caution: "必ず守ってください",
-    guide_senior_title: "高齢者向け服薬指導",
-    action_print: "印刷",
-    action_send: "送信",
-    unknown: "不明",
-    alert_red: "深刻",
-    alert_yellow: "注意",
-    alert_green: "良好"
   }
 };

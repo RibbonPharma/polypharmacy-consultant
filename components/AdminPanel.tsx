@@ -1,6 +1,6 @@
 
 import React, { useState } from 'react';
-import { Settings, ShieldCheck, Database, Activity, ArrowLeft, ExternalLink, CheckCircle, XCircle, FileText, Eye, X } from 'lucide-react';
+import { ShieldCheck, ArrowLeft, CheckCircle, XCircle, Eye, X } from 'lucide-react';
 import { Pharmacist } from '../types';
 
 interface AdminPanelProps {
@@ -11,15 +11,13 @@ interface AdminPanelProps {
 }
 
 const AdminPanel: React.FC<AdminPanelProps> = ({ onBack, users, onApprove, onReject }) => {
-  const [activeTab, setActiveTab] = useState<'rules' | 'users' | 'stats'>('users');
-
   return (
     <div className="flex-1 flex flex-col h-full bg-slate-50 animate-in fade-in duration-500" role="main">
       <div className="bg-slate-900 text-white p-8">
         <div className="flex items-center justify-between max-w-6xl mx-auto w-full">
             <div className="flex items-center gap-4">
-                <button 
-                  onClick={onBack} 
+                <button
+                  onClick={onBack}
                   className="p-3 hover:bg-white/10 rounded-2xl transition-colors focus:ring-2 focus:ring-white outline-none"
                   aria-label="대시보드로 돌아가기"
                 >
@@ -39,39 +37,14 @@ const AdminPanel: React.FC<AdminPanelProps> = ({ onBack, users, onApprove, onRej
         </div>
       </div>
 
-      <div className="flex-1 max-w-6xl mx-auto w-full p-6 grid grid-cols-12 gap-6 overflow-hidden">
-        <div className="col-span-3 space-y-2" role="tablist" aria-orientation="vertical">
-            <NavBtn active={activeTab === 'users'} id="users-tab" onClick={() => setActiveTab('users')} icon={<ShieldCheck className="w-5 h-5"/>} label="가입 승인 대기" />
-            <NavBtn active={activeTab === 'rules'} id="rules-tab" onClick={() => setActiveTab('rules')} icon={<Database className="w-5 h-5"/>} label="임상 규칙 관리" />
-            <NavBtn active={activeTab === 'stats'} id="stats-tab" onClick={() => setActiveTab('stats')} icon={<Activity className="w-5 h-5"/>} label="시스템 지표" />
-        </div>
-
-        <div className="col-span-9 bg-white rounded-[2.5rem] shadow-2xl border border-slate-200 overflow-hidden flex flex-col" role="tabpanel" aria-labelledby={`${activeTab}-tab`}>
-            {activeTab === 'users' && <UserManager users={users} onApprove={onApprove} onReject={onReject} />}
-            {activeTab === 'rules' && <RulesManager />}
-            {activeTab === 'stats' && <StatsDashboard />}
+      <div className="flex-1 max-w-6xl mx-auto w-full p-6 overflow-hidden">
+        <div className="bg-white rounded-[2.5rem] shadow-2xl border border-slate-200 overflow-hidden flex flex-col h-full">
+            <UserManager users={users} onApprove={onApprove} onReject={onReject} />
         </div>
       </div>
     </div>
   );
 };
-
-const NavBtn = ({ active, onClick, icon, label, id }: any) => (
-    <button 
-        id={id}
-        onClick={onClick}
-        role="tab"
-        aria-selected={active}
-        className={`w-full flex items-center gap-3 px-6 py-5 rounded-3xl font-black transition-all outline-none focus:ring-2 focus:ring-slate-900 ${
-            active 
-            ? 'bg-slate-900 text-white shadow-xl translate-x-1' 
-            : 'text-slate-400 hover:bg-slate-200'
-        }`}
-    >
-        {icon}
-        {label}
-    </button>
-);
 
 interface UserManagerProps {
     users: Pharmacist[];
@@ -162,19 +135,5 @@ const UserManager: React.FC<UserManagerProps> = ({ users, onApprove, onReject })
         </div>
     );
 };
-
-const RulesManager = () => (
-    <div className="p-8 flex flex-col h-full">
-        <h3 className="text-2xl font-black text-slate-900 mb-8">Clinical Rules</h3>
-        <div className="text-center py-20 opacity-20">준비 중입니다.</div>
-    </div>
-);
-
-const StatsDashboard = () => (
-    <div className="p-8 h-full flex flex-col items-center justify-center opacity-20">
-        <Activity className="w-20 h-20 mb-4" />
-        <p className="font-black">System Stats Ready</p>
-    </div>
-);
 
 export default AdminPanel;

@@ -88,15 +88,4 @@ export enum ViewMode {
   ADMIN_PANEL = 'ADMIN_PANEL'
 }
 
-export type Language = 'ko' | 'en' | 'ja';
-
-// Feedback Types
-export type FeedbackRating = 'POSITIVE' | 'NEGATIVE';
-
-export interface FeedbackSubmission {
-  targetId: string; // Can be an Alert Title, Chat Message ID, or 'OVERALL'
-  category: 'ALERT' | 'CHAT' | 'OVERALL_ANALYSIS';
-  rating: FeedbackRating;
-  comment?: string;
-  timestamp: string;
-}
+export type Language = 'ko' | 'en';
