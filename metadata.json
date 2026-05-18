@@ -1,0 +1,8 @@
+{
+  "name": "Remix: PharmGni 2.0",
+  "description": "AI-powered clinical assistant for pharmacists. Features multi-drug review, interaction analysis, and patient-friendly medication guides.",
+  "requestFramePermissions": [
+    "camera"
+  ],
+  "majorCapabilities": []
+}
