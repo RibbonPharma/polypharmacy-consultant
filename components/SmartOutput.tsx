@@ -1,7 +1,7 @@
 
 import React, { useState } from 'react';
 import { AnalysisResult } from '../types';
-import { Printer, Smartphone, FileText, Image as ImageIcon, ClipboardList, CheckSquare } from 'lucide-react';
+import { Printer, Smartphone, FileText, Image as ImageIcon, ClipboardList, CheckSquare, Copy, Check } from 'lucide-react';
 
 interface SmartOutputProps {
   analysis: AnalysisResult | null;
@@ -9,6 +9,33 @@ interface SmartOutputProps {
 
 const SmartOutput: React.FC<SmartOutputProps> = ({ analysis }) => {
   const [mode, setMode] = useState<'pharmacist' | 'patient'>('pharmacist');
+  const [copied, setCopied] = useState(false);
+
+  const handleCopyDraft = async () => {
+    if (!analysis) return;
+    const soap = analysis.soapNote;
+    const lines: string[] = [
+      '=== 다제약물 관리사업 AI 기록 초안 ===',
+      '',
+    ];
+    if (soap) {
+      lines.push('[ SOAP 노트 ]');
+      lines.push(`S (주관적): ${soap.subjective}`);
+      lines.push(`O (객관적): ${soap.objective}`);
+      lines.push(`A (평가): ${soap.assessment}`);
+      lines.push(`P (계획): ${soap.plan}`);
+      lines.push('');
+    }
+    if (analysis.alerts.length > 0) {
+      lines.push('[ 약물 관련 문제 ]');
+      analysis.alerts.forEach(a => lines.push(`- [${a.level}] ${a.title}: ${a.action}`));
+      lines.push('');
+    }
+    lines.push(`[ 약물 요약 ] ${analysis.summary}`);
+    await navigator.clipboard.writeText(lines.join('\n'));
+    setCopied(true);
+    setTimeout(() => setCopied(false), 2000);
+  };
 
   if (!analysis) {
     return (
@@ -181,13 +208,21 @@ const SmartOutput: React.FC<SmartOutputProps> = ({ analysis }) => {
       </div>
 
        <div className="p-5 border-t border-slate-100 bg-white grid grid-cols-2 gap-3 hidden-print">
-        <button 
+        <button
             onClick={() => window.print()}
-            className="flex items-center justify-center gap-2 py-3 bg-slate-800 text-white rounded-xl font-bold hover:bg-slate-700 transition-colors focus:ring-2 focus:ring-slate-900 outline-none" aria-label="안내문 인쇄">
-            <Printer className="w-4 h-4" aria-hidden="true" /> {mode === 'pharmacist' ? '전산시스템 등록(복사)' : '결과서 인쇄'}
+            className="flex items-center justify-center gap-2 py-3 bg-slate-800 text-white rounded-xl font-bold hover:bg-slate-700 transition-colors focus:ring-2 focus:ring-slate-900 outline-none"
+            aria-label="인쇄">
+            <Printer className="w-4 h-4" aria-hidden="true" />
+            {mode === 'pharmacist' ? '서식 인쇄' : '결과서 인쇄'}
         </button>
-        <button className="flex items-center justify-center gap-2 py-3 bg-indigo-50 text-indigo-700 rounded-xl font-bold hover:bg-indigo-100 transition-colors focus:ring-2 focus:ring-indigo-500 outline-none" aria-label="카카오톡 또는 문자로 전송">
-            <Smartphone className="w-4 h-4" aria-hidden="true" /> {mode === 'pharmacist' ? 'AI 기록 초안 생성' : '보호자에게 전송'}
+        <button
+            onClick={handleCopyDraft}
+            className="flex items-center justify-center gap-2 py-3 bg-indigo-50 text-indigo-700 rounded-xl font-bold hover:bg-indigo-100 transition-colors focus:ring-2 focus:ring-indigo-500 outline-none"
+            aria-label="AI 기록 초안 클립보드 복사">
+            {copied
+              ? <><Check className="w-4 h-4" aria-hidden="true" /> 복사 완료!</>
+              : <><Copy className="w-4 h-4" aria-hidden="true" /> {mode === 'pharmacist' ? 'AI 기록 초안 복사' : '초안 클립보드 복사'}</>
+            }
         </button>
       </div>
     </section>

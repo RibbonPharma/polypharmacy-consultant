@@ -4,10 +4,13 @@ import { AnalysisResult, AlertLevel, Patient } from "../types";
 import { checkLocalDUR } from "./durEngine";
 import { searchWhoDb, WHO_ADVERSE_DB } from "./whoAdverseDb";
 
-// [중요] 실제 서비스 연동 시 과금/할당량 초과 방지를 위해 사용자 환경에 맞게 API 키를 기입해야 합니다.
-// (예: 백엔드 서버를 통한 프록시 통신 또는 사용자 개별 API 키 입력 등)
-const API_KEY = process.env.GEMINI_API_KEY || "YOUR_GEMINI_API_KEY_HERE";
-const ai = new GoogleGenAI({ apiKey: API_KEY });
+// Vite에서 환경변수는 import.meta.env.VITE_* 형식으로 접근해야 합니다.
+// .env.local 파일에 VITE_GEMINI_API_KEY=your_key 형태로 설정하세요.
+const API_KEY = import.meta.env.VITE_GEMINI_API_KEY as string | undefined;
+if (!API_KEY) {
+  console.error("[geminiService] VITE_GEMINI_API_KEY is not set. Add it to .env.local");
+}
+const ai = new GoogleGenAI({ apiKey: API_KEY ?? "" });
 
 function cleanJsonString(text: string): string {
   // 1. Try to find a JSON code block (robust against "thinking" text preamble)
@@ -222,9 +225,7 @@ export const askClinicalAi = async (
   analysis: AnalysisResult | null
 ): Promise<string> => {
   try {
-    // [중요] 타인에게 공유 시 개인 API 키가 노출되어 할당량 손해가 발생할 수 있습니다.
-    // 사용자로부터 직접 API 키를 입력받거나, 보안이 적용된 백엔드를 거쳐야 합니다.
-    const ai = new GoogleGenAI({ apiKey: API_KEY });
+    // 모듈 상단의 ai 인스턴스를 재사용합니다.
     
     // 1. 환자의 현재 약물 리스트 추출
     const currentMeds = analysis && analysis.medications 
