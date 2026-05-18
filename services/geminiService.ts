@@ -4,13 +4,14 @@ import { AnalysisResult, AlertLevel, Patient } from "../types";
 import { checkLocalDUR } from "./durEngine";
 import { searchWhoDb, WHO_ADVERSE_DB } from "./whoAdverseDb";
 
-// Vite에서 환경변수는 import.meta.env.VITE_* 형식으로 접근해야 합니다.
-// .env.local 파일에 VITE_GEMINI_API_KEY=your_key 형태로 설정하세요.
-const API_KEY = import.meta.env.VITE_GEMINI_API_KEY as string | undefined;
+// vite.config.ts의 define을 통해 주입됩니다.
+// .env.local에 GEMINI_API_KEY=your_key 로 설정하거나
+// Codespaces Secrets에 GEMINI_API_KEY 를 추가하세요.
+const API_KEY: string = process.env.GEMINI_API_KEY || "";
 if (!API_KEY) {
-  console.error("[geminiService] VITE_GEMINI_API_KEY is not set. Add it to .env.local");
+  console.error("[PharmGni] GEMINI_API_KEY가 설정되지 않았습니다. .env.local 또는 Codespaces Secrets를 확인하세요.");
 }
-const ai = new GoogleGenAI({ apiKey: API_KEY ?? "" });
+const ai = new GoogleGenAI({ apiKey: API_KEY });
 
 function cleanJsonString(text: string): string {
   // 1. Try to find a JSON code block (robust against "thinking" text preamble)

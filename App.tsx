@@ -156,7 +156,7 @@ const App: React.FC = () => {
                  <ClinicalDashboard analysis={analysisResult} />
               </div>
               <div className="lg:col-span-4 h-full overflow-hidden">
-                 <SmartOutput analysis={analysisResult} />
+                 <SmartOutput analysis={analysisResult} patient={patient} />
               </div>
             </div>
         )}
