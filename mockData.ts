@@ -1,7 +1,8 @@
 import { Pharmacist } from './types';
 
 // 초기 시스템 테스트 유저 데이터 (오픈소스 공개용 샘플)
-// 주의: 실제 운영 환경에서는 데이터베이스와 연동하여 사용자 인증을 처리해야 합니다.
+// ⚠️  비밀번호는 데모용 placeholder입니다. 실제 운영 환경에서는 반드시
+//     bcrypt 등 단방향 해시로 저장하고, 데이터베이스 인증으로 교체해야 합니다.
 export const INITIAL_USERS: Pharmacist[] = [
   {
     id: 'admin',
@@ -11,7 +12,7 @@ export const INITIAL_USERS: Pharmacist[] = [
     role: 'ADMIN',
     status: 'ACTIVE',
     requestDate: '2024-01-01',
-    password: 'admin' // 예시 비밀번호. 실사용시 암호화 필요
+    password: 'REPLACE_WITH_HASHED_PASSWORD'
   },
   {
     id: 'pharmacist_1',
@@ -21,6 +22,6 @@ export const INITIAL_USERS: Pharmacist[] = [
     role: 'USER',
     status: 'ACTIVE',
     requestDate: '2024-02-15',
-    password: 'password123'
+    password: 'REPLACE_WITH_HASHED_PASSWORD'
   }
 ];
