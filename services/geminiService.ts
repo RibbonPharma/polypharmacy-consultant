@@ -175,7 +175,7 @@ export const analyzeMedicalImage = async (
 
       } catch (e) {
         console.error("JSON Parsing Error:", e);
-        console.debug("Raw Text:", response.text); // Debug raw text for analysis
+        // console.debug("Raw Text:", response.text) — 처방전 분석 원문은 환자 정보를 포함할 수 있으므로 프로덕션에서 로깅 금지
         throw new Error("Invalid JSON response from AI");
       }
       

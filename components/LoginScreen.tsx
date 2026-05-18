@@ -37,7 +37,7 @@ const LoginScreen: React.FC<LoginScreenProps> = ({ users, onLogin }) => {
           AI 임상 약사 보조 시스템
         </h2>
         <p className="mt-2 text-sm text-slate-600">
-          테스트 계정: admin/admin 또는 pharmacist_1/password123
+          약사 면허 인증 후 이용 가능합니다.
         </p>
       </div>
 
