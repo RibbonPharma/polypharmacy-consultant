@@ -1,7 +1,7 @@
 
 import React, { useState } from 'react';
 import { AnalysisResult, Patient, AlertLevel } from '../types';
-import { FileText, Image as ImageIcon, ClipboardList, CheckSquare, Download, Copy, Check } from 'lucide-react';
+import { FileText, Image as ImageIcon, ClipboardList, CheckSquare, Download, Copy, Check, Printer } from 'lucide-react';
 
 interface SmartOutputProps {
   analysis: AnalysisResult | null;
@@ -107,6 +107,164 @@ function downloadCSV(analysis: AnalysisResult, patient: Patient) {
   a.download = `다제약물_상담기록지_${patient.name}_${todayISO}.csv`;
   a.click();
   URL.revokeObjectURL(url);
+}
+
+function printRecord(analysis: AnalysisResult, patient: Patient) {
+  const todayISO = new Date().toISOString().split('T')[0];
+  const duplicates = analysis.alerts.filter(a => a.reason.includes('중복') || a.title.includes('중복'));
+  const adrAlerts = analysis.alerts.filter(a => a.title.includes('부작용') || a.title.includes('이상반응') || a.title.includes('이상'));
+  const interactions = analysis.alerts.filter(a => a.title.includes('상호작용') || a.reason.includes('상호작용'));
+  const redAlerts = analysis.alerts.filter(a => a.level === AlertLevel.RED);
+  const medNames = analysis.medications.map(m => (m.name + m.ingredient + (m.category || '')).toLowerCase());
+  const highRisk: string[] = [];
+  if (medNames.some(n => n.includes('와파린') || n.includes('warfarin') || n.includes('아픽사반') || n.includes('리바록사반'))) highRisk.push('항응고제');
+  if (medNames.some(n => n.includes('이부프로펜') || n.includes('naproxen') || n.includes('diclofenac') || n.includes('nsaid'))) highRisk.push('NSAIDs');
+  if (medNames.some(n => n.includes('인슐린') || n.includes('insulin'))) highRisk.push('인슐린');
+  if (medNames.some(n => n.includes('흡입') || n.includes('inhaler') || n.includes('부데소니'))) highRisk.push('흡입기');
+  if (medNames.some(n => n.includes('메트포르민') || n.includes('metformin') || n.includes('글리벤'))) highRisk.push('경구혈당강하제');
+
+  const alertRows = (alerts: typeof analysis.alerts) =>
+    alerts.length > 0
+      ? `<ul class="alert-list">${alerts.map(a => `<li><strong>${a.drugsInvolved.join(', ')}</strong>: ${a.reason || a.action}</li>`).join('')}</ul>`
+      : '<p class="none">□ 해당사항 없음</p>';
+
+  const medTableRows = analysis.medications
+    .map(m => `<tr><td>${m.name}</td><td>${m.ingredient}</td><td>${m.dosage}</td><td>${m.frequency}</td></tr>`)
+    .join('');
+
+  const soap = analysis.soapNote
+    ? `<section><h4>SOAP 노트 (AI 초안)</h4>
+        <table class="info-table"><tbody>
+          <tr><td class="label">S (주관적)</td><td>${analysis.soapNote.subjective}</td></tr>
+          <tr><td class="label">O (객관적)</td><td>${analysis.soapNote.objective}</td></tr>
+          <tr><td class="label">A (평가)</td><td>${analysis.soapNote.assessment}</td></tr>
+          <tr><td class="label">P (계획)</td><td>${analysis.soapNote.plan}</td></tr>
+        </tbody></table></section>`
+    : '';
+
+  const html = `<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8"/>
+<title>다제약물 관리사업 상담 기록지</title>
+<style>
+  body { font-family: "Malgun Gothic", "Apple SD Gothic Neo", sans-serif; font-size: 11pt; margin: 15mm 15mm 15mm 15mm; color: #111; }
+  h1 { text-align: center; font-size: 15pt; border-bottom: 2px solid #111; padding-bottom: 6px; margin-bottom: 4px; }
+  .subtitle { text-align: center; font-size: 9pt; color: #555; margin-bottom: 16px; }
+  section { margin-bottom: 12px; }
+  h4 { background: #f1f5f9; padding: 4px 8px; font-size: 10pt; border-left: 3px solid #4f46e5; margin: 0 0 6px 0; }
+  .info-table { width: 100%; border-collapse: collapse; font-size: 10pt; }
+  .info-table td, .info-table th { border: 1px solid #cbd5e1; padding: 4px 8px; }
+  .info-table th { background: #f8fafc; font-weight: bold; width: 30%; }
+  .info-table .label { background: #f8fafc; font-weight: bold; width: 30%; }
+  .med-table { width: 100%; border-collapse: collapse; font-size: 9.5pt; }
+  .med-table th { background: #f1f5f9; border: 1px solid #cbd5e1; padding: 4px 6px; text-align: left; }
+  .med-table td { border: 1px solid #e2e8f0; padding: 3px 6px; }
+  .med-table tr:nth-child(even) td { background: #f8fafc; }
+  .none { color: #64748b; margin: 2px 0 2px 12px; }
+  .alert-list { margin: 2px 0 2px 20px; padding: 0; color: #b91c1c; }
+  .alert-list li { margin-bottom: 3px; }
+  .high-risk-tag { display: inline-block; border: 1px solid #f59e0b; background: #fffbeb; color: #92400e; font-size: 9pt; padding: 1px 6px; border-radius: 3px; margin: 2px; }
+  .sign-row { display: flex; justify-content: flex-end; gap: 20px; margin-top: 16px; font-size: 10pt; }
+  .sign-box { border-bottom: 1px solid #111; min-width: 120px; text-align: center; padding-bottom: 2px; }
+  .footer-note { font-size: 8pt; color: #94a3b8; text-align: center; border-top: 1px solid #e2e8f0; margin-top: 12px; padding-top: 6px; }
+  @page { size: A4; margin: 15mm; }
+  @media print { body { margin: 0; } }
+</style>
+</head>
+<body>
+<h1>다제약물 관리사업 상담 기록지(1차)</h1>
+<p class="subtitle">국민건강보험공단 &nbsp;|&nbsp; 상담일: ${todayISO}</p>
+
+<section>
+<h4>대상자 기본 정보</h4>
+<table class="info-table"><tbody>
+  <tr><th>성명</th><td>${patient.name}</td><th>생년월일</th><td>${patient.birthDate}</td></tr>
+  <tr><th>성별/나이</th><td>${patient.gender === 'M' ? '남' : '여'} / ${patient.age}세</td><th>방문유형</th><td>${patient.visitType === 'Home' ? '가정방문' : '약국방문'}</td></tr>
+  <tr><th>진단명(상병)</th><td colspan="3">${patient.diagnosisCodes.map(d => `${d.code} ${d.name}`).join(', ') || '-'}</td></tr>
+  <tr><th>기저질환</th><td colspan="3">${patient.conditions.join(', ') || '-'}</td></tr>
+  <tr><th>eGFR</th><td colspan="3">${patient.eGFR ? patient.eGFR + ' mL/min/1.73m²' : '미측정'}</td></tr>
+</tbody></table>
+</section>
+
+<section>
+<h4>복용약물 현황 (총 ${analysis.medications.length}종)</h4>
+<table class="med-table">
+  <thead><tr><th>약품명</th><th>성분</th><th>용량</th><th>용법</th></tr></thead>
+  <tbody>${medTableRows}</tbody>
+</table>
+</section>
+
+<section>
+<h4>2-1. 복약이행도 평가</h4>
+<p class="none">□ 복약이행도 낮은 약물 없음&nbsp;&nbsp;&nbsp;□ 복약이행도 낮은 약물 있음: ________________</p>
+</section>
+
+<section>
+<h4>2-2. 중복 투약</h4>${alertRows(duplicates)}</section>
+
+<section>
+<h4>2-3. 부작용(이상반응) 의심 약물</h4>${alertRows(adrAlerts)}</section>
+
+<section>
+<h4>2-4. 약물-약물 상호작용</h4>
+${interactions.length > 0
+  ? `<ul class="alert-list">${interactions.map(a => `<li><strong>${a.drugsInvolved.join(' ↔ ')}</strong>: ${a.action}</li>`).join('')}</ul>`
+  : '<p class="none">□ 해당사항 없음</p>'}
+</section>
+
+<section>
+<h4>3-1. 의뢰 / 연계</h4>
+${redAlerts.length > 0
+  ? `<p style="color:#b91c1c;font-weight:bold;">■ 처방의사 확인 권고</p><ul class="alert-list">${redAlerts.map(a => `<li>${a.title}</li>`).join('')}</ul>`
+  : '<p class="none">□ 해당사항 없음</p>'}
+</section>
+
+<section>
+<h4>3-2. 약물 관련 문제 해결 결과</h4>
+<p class="none">□ 해결됨&nbsp;&nbsp;&nbsp;□ 부분 해결&nbsp;&nbsp;&nbsp;□ 해결되지 않음&nbsp;&nbsp;&nbsp;□ 해당없음</p>
+</section>
+
+<section>
+<h4>3-3. 행동변화</h4>
+<p class="none">□ 변화 있음&nbsp;&nbsp;&nbsp;□ 변화 없음&nbsp;&nbsp;&nbsp;□ 해당없음</p>
+</section>
+
+<section>
+<h4>3-4. 집중관리약제 교육</h4>
+${highRisk.length > 0
+  ? highRisk.map(c => `<span class="high-risk-tag">${c} 교육 필요</span>`).join('')
+  : '<p class="none">□ 집중관리약제 해당없음</p>'}
+<div style="margin-top:4px;"><span style="font-size:9pt;color:#475569;">교육 내용: </span><span style="border-bottom:1px solid #aaa;display:inline-block;min-width:200px;">&nbsp;</span></div>
+</section>
+
+<section>
+<h4>3-5. 기타 / 다음 상담 계획</h4>
+<div style="border:1px solid #e2e8f0;min-height:32px;padding:4px 8px;font-size:9pt;color:#94a3b8;">약사 직접 기입</div>
+</section>
+
+${soap}
+
+<section>
+<h4>AI 분석 요약</h4>
+<p style="font-size:10pt;">${analysis.summary}</p>
+</section>
+
+<div class="sign-row">
+  <span>상담일: ${todayISO}</span>
+  <div class="sign-box">담당약사 서명&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;(인)</div>
+</div>
+
+<p class="footer-note">※ AI 분석은 임상 보조 수단이며, 최종 책임은 담당 약사에게 있습니다. (의료법 제27조 준수)</p>
+</body>
+</html>`;
+
+  const w = window.open('', '_blank', 'width=794,height=1123');
+  if (!w) return;
+  w.document.write(html);
+  w.document.close();
+  w.focus();
+  w.print();
 }
 
 const SmartOutput: React.FC<SmartOutputProps> = ({ analysis, patient }) => {
@@ -441,23 +599,31 @@ const SmartOutput: React.FC<SmartOutputProps> = ({ analysis, patient }) => {
       </div>
 
       {/* 하단 버튼 */}
-      <div className="p-3 border-t border-slate-100 bg-white grid grid-cols-2 gap-2">
+      <div className="p-3 border-t border-slate-100 bg-white grid grid-cols-3 gap-2">
         <button
           onClick={() => patient && downloadCSV(analysis, patient)}
           disabled={!patient}
-          className="flex items-center justify-center gap-2 py-2.5 bg-slate-800 text-white rounded-xl text-xs font-bold hover:bg-slate-700 transition-colors focus:ring-2 focus:ring-slate-900 outline-none disabled:opacity-40"
+          className="flex items-center justify-center gap-1.5 py-2.5 bg-slate-800 text-white rounded-xl text-xs font-bold hover:bg-slate-700 transition-colors focus:ring-2 focus:ring-slate-900 outline-none disabled:opacity-40"
           aria-label="CSV 다운로드"
         >
-          <Download className="w-4 h-4" /> CSV 다운로드
+          <Download className="w-3.5 h-3.5" /> CSV
+        </button>
+        <button
+          onClick={() => patient && printRecord(analysis, patient)}
+          disabled={!patient}
+          className="flex items-center justify-center gap-1.5 py-2.5 bg-teal-600 text-white rounded-xl text-xs font-bold hover:bg-teal-700 transition-colors focus:ring-2 focus:ring-teal-500 outline-none disabled:opacity-40"
+          aria-label="상담기록지 인쇄"
+        >
+          <Printer className="w-3.5 h-3.5" /> 인쇄
         </button>
         <button
           onClick={handleCopyDraft}
-          className="flex items-center justify-center gap-2 py-2.5 bg-indigo-50 text-indigo-700 rounded-xl text-xs font-bold hover:bg-indigo-100 transition-colors focus:ring-2 focus:ring-indigo-500 outline-none"
+          className="flex items-center justify-center gap-1.5 py-2.5 bg-indigo-50 text-indigo-700 rounded-xl text-xs font-bold hover:bg-indigo-100 transition-colors focus:ring-2 focus:ring-indigo-500 outline-none"
           aria-label="AI 기록 초안 복사"
         >
           {copied
-            ? <><Check className="w-4 h-4" /> 복사 완료!</>
-            : <><Copy className="w-4 h-4" /> AI 기록 초안 복사</>
+            ? <><Check className="w-3.5 h-3.5" /> 완료!</>
+            : <><Copy className="w-3.5 h-3.5" /> 초안 복사</>
           }
         </button>
       </div>
