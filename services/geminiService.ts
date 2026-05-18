@@ -6,9 +6,18 @@ import { searchWhoDb, WHO_ADVERSE_DB } from "./whoAdverseDb";
 
 const SESSION_KEY = 'pharmgni_gemini_key';
 
+// vite.config define이 키 없을 때 "undefined" 문자열을 주입하는 케이스 필터링
+function isValidKey(k: string | null | undefined): k is string {
+  return !!k && k.length > 10 && k !== 'undefined' && !k.startsWith('YOUR_');
+}
+
 // 우선순위: 사용자 입력(sessionStorage) > .env.local > Codespaces Secret
 function getApiKey(): string {
-  return sessionStorage.getItem(SESSION_KEY) || process.env.GEMINI_API_KEY || "";
+  const session = sessionStorage.getItem(SESSION_KEY);
+  if (isValidKey(session)) return session;
+  const env = process.env.GEMINI_API_KEY;
+  if (isValidKey(env)) return env;
+  return "";
 }
 
 export function isApiKeyConfigured(): boolean {
