@@ -1,13 +1,14 @@
 import React, { useState } from 'react';
-import { Shield, AlertTriangle } from 'lucide-react';
+import { Shield, AlertTriangle, FlaskConical } from 'lucide-react';
 import { Pharmacist } from '../types';
 
 interface LoginScreenProps {
   users: Pharmacist[];
   onLogin: (user: Pharmacist) => void;
+  onDemoLogin: () => void;
 }
 
-const LoginScreen: React.FC<LoginScreenProps> = ({ users, onLogin }) => {
+const LoginScreen: React.FC<LoginScreenProps> = ({ users, onLogin, onDemoLogin }) => {
   const [userId, setUserId] = useState('');
   const [password, setPassword] = useState('');
   const [error, setError] = useState('');
@@ -94,6 +95,25 @@ const LoginScreen: React.FC<LoginScreenProps> = ({ users, onLogin }) => {
               </button>
             </div>
           </form>
+
+          <div className="mt-4">
+            <div className="relative">
+              <div className="absolute inset-0 flex items-center">
+                <div className="w-full border-t border-slate-200" />
+              </div>
+              <div className="relative flex justify-center text-xs">
+                <span className="px-2 bg-white text-slate-400">또는</span>
+              </div>
+            </div>
+            <button
+              type="button"
+              onClick={onDemoLogin}
+              className="mt-4 w-full flex items-center justify-center gap-2 py-2 px-4 border border-slate-300 rounded-md shadow-sm text-sm font-medium text-slate-700 bg-white hover:bg-slate-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-slate-400 transition-colors"
+            >
+              <FlaskConical className="h-4 w-4 text-teal-600" />
+              데모 체험 (로그인 없이 둘러보기)
+            </button>
+          </div>
         </div>
         
         {/* 법적 면책 조항 (Legal Disclaimer) */}

@@ -10,7 +10,7 @@ import ClinicalAssistant from './components/ClinicalAssistant';
 import AdminPanel from './components/AdminPanel';
 import LoginScreen from './components/LoginScreen';
 import { Pharmacist, Patient, AnalysisResult, ViewMode, UserRole, UserStatus } from './types';
-import { INITIAL_USERS } from './mockData';
+import { INITIAL_USERS, DEMO_PHARMACIST } from './mockData';
 
 const App: React.FC = () => {
   const [viewMode, setViewMode] = useState<ViewMode>(ViewMode.AUTH);
@@ -81,12 +81,16 @@ const App: React.FC = () => {
 
   if (viewMode === ViewMode.AUTH) {
       return (
-          <LoginScreen 
-              users={userDB} 
+          <LoginScreen
+              users={userDB}
               onLogin={(user) => {
                   setPharmacist(user);
                   setViewMode(ViewMode.PATIENT_LIST);
-              }} 
+              }}
+              onDemoLogin={() => {
+                  setPharmacist(DEMO_PHARMACIST);
+                  setViewMode(ViewMode.PATIENT_LIST);
+              }}
           />
       );
   }
